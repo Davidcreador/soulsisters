@@ -321,43 +321,48 @@ function Ventas() {
             </p>
           </div>
         ) : isMobile ? (
-          /* Mobile Cards - Full Width */
-          <div className="space-y-3 -mx-4 px-4">
+          /* Mobile Cards - Simple Vertical Layout */
+          <div className="space-y-3">
             {filteredProducts.map((product) => (
               <motion.div
                 key={product._id}
                 layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`bg-card border border-border rounded-xl overflow-hidden ${
+                className={`bg-card border border-border rounded-xl p-4 ${
                   product.quantity === 0 ? "opacity-60" : ""
                 }`}
               >
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    {/* Product Image */}
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
+                <div className="flex gap-3">
+                  {/* Product Image - Left Side */}
+                  <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
                         <Package className="w-8 h-8 text-muted-foreground" />
-                      )}
-                    </div>
+                      </div>
+                    )}
+                  </div>
 
-                    {/* Product Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground text-sm truncate mb-1">
+                  {/* Product Info - Right Side */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-medium text-foreground text-sm leading-tight mb-1">
                         {product.name}
                       </h3>
-                      <p className="text-xl font-bold text-foreground mb-1">
+                      <p className="text-lg font-bold text-foreground">
                         {formatCurrency(product.suggestedPrice)}
                       </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <span
-                        className={`inline-block text-xs px-2 py-0.5 rounded-full border ${getStockColor(
+                        className={`text-xs px-2 py-1 rounded-full border ${getStockColor(
                           product.quantity
                         )}`}
                       >
@@ -365,20 +370,20 @@ function Ventas() {
                       </span>
                     </div>
                   </div>
-
-                  {/* Sell Button - Full Width on Mobile */}
-                  <button
-                    onClick={() => handleSellClick(product)}
-                    disabled={product.quantity === 0}
-                    className={`w-full mt-3 py-3 rounded-lg font-semibold text-sm transition-colors min-h-[44px] ${
-                      product.quantity === 0
-                        ? "bg-muted text-muted-foreground cursor-not-allowed"
-                        : "bg-green-600 text-white hover:bg-green-700 active:scale-95"
-                    }`}
-                  >
-                    {product.quantity === 0 ? "Agotado" : "Vender"}
-                  </button>
                 </div>
+
+                {/* Sell Button - Below */}
+                <button
+                  onClick={() => handleSellClick(product)}
+                  disabled={product.quantity === 0}
+                  className={`w-full mt-3 py-2.5 rounded-lg font-semibold text-sm ${
+                    product.quantity === 0
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  }`}
+                >
+                  {product.quantity === 0 ? "Agotado" : "Vender"}
+                </button>
               </motion.div>
             ))}
           </div>
