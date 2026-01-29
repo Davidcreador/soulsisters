@@ -11,8 +11,8 @@ export function Breadcrumb() {
   const location = useLocation();
   const pathname = location.pathname;
   
-  // Don't show breadcrumb on home
-  if (pathname === "/") return null;
+  // Don't show breadcrumb on home or ventas page
+  if (pathname === "/" || pathname === "/ventas") return null;
 
   return (
     <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
