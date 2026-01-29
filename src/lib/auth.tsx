@@ -41,6 +41,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(SESSION_DURATION);
 
+  const validateToken = useCallback(async (token: string) => {
+    try {
+      const { payload } = await jose.jwtVerify(token, SECRET_KEY);
+      setUser({
+        id: payload.sub as string,
+        username: payload.username as string,
+        role: payload.role as "admin" | "pos",
+        name: payload.name as string,
+      });
+    } catch {
+      localStorage.removeItem("auth_token");
+    }
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("auth_token");
+    setUser(null);
+    setShowWarning(false);
+    setTimeRemaining(SESSION_DURATION);
+  }, []);
+
+  const extendSession = useCallback(async () => {
+    if (!user) return;
+
+    const token = await new jose.SignJWT({
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+      name: user.name,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("4h")
+      .sign(SECRET_KEY);
+
+    localStorage.setItem("auth_token", token);
+    setShowWarning(false);
+    setTimeRemaining(SESSION_DURATION);
+  }, [user]);
+
   // Check for existing session on mount
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -51,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [validateToken]);
 
   // Re-validate token on location changes to prevent auth loss during navigation
   useEffect(() => {
@@ -61,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         validateToken(token);
       }
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, validateToken]);
 
   // Session timeout handler
   useEffect(() => {
@@ -98,21 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(checkSession, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [user]);
-
-  const validateToken = async (token: string) => {
-    try {
-      const { payload } = await jose.jwtVerify(token, SECRET_KEY);
-      setUser({
-        id: payload.sub as string,
-        username: payload.username as string,
-        role: payload.role as "admin" | "pos",
-        name: payload.name as string,
-      });
-    } catch {
-      localStorage.removeItem("auth_token");
-    }
-  };
+  }, [user, logout]);
 
   const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     // Check rate limiting
@@ -175,32 +201,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return { success: true };
-  };
-
-  const logout = useCallback(() => {
-    localStorage.removeItem("auth_token");
-    setUser(null);
-    setShowWarning(false);
-    setTimeRemaining(SESSION_DURATION);
-  }, []);
-
-  const extendSession = async () => {
-    if (!user) return;
-
-    const token = await new jose.SignJWT({
-      sub: user.id,
-      username: user.username,
-      role: user.role,
-      name: user.name,
-    })
-      .setProtectedHeader({ alg: "HS256" })
-      .setIssuedAt()
-      .setExpirationTime("4h")
-      .sign(SECRET_KEY);
-
-    localStorage.setItem("auth_token", token);
-    setShowWarning(false);
-    setTimeRemaining(SESSION_DURATION);
   };
 
   return (

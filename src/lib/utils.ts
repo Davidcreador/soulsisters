@@ -1,4 +1,4 @@
-import type { Product, InventoryStats, Category } from "../types";
+import type { Product, Category } from "../types";
 
 // Formatear moneda en Colones Costarricenses (CRC)
 export const formatCurrency = (amount: number): string => {

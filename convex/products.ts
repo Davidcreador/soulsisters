@@ -20,7 +20,14 @@ export const getById = query({
 
 // Get products by category
 export const getByCategory = query({
-  args: { category: v.string() },
+  args: { category: v.union(
+    v.literal("necklaces"),
+    v.literal("earrings"),
+    v.literal("bracelets"),
+    v.literal("rings"),
+    v.literal("sets"),
+    v.literal("other")
+  )},
   handler: async (ctx, args) => {
     return await ctx.db
       .query("products")

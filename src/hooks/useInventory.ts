@@ -1,6 +1,5 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../lib/convex";
-import type { Product, InventoryStats } from "../types";
 
 // Hook para obtener todos los productos
 export const useProducts = () => {
@@ -21,7 +20,7 @@ export const useStats = () => {
 export const useProductsByCategory = (category: string) => {
   return useQuery(
     api.products.getByCategory,
-    category !== "all" ? { category } : "skip"
+    category !== "all" ? { category: category as any } : "skip"
   );
 };
 

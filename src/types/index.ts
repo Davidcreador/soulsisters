@@ -10,6 +10,7 @@ export interface Product {
   status: 'available' | 'sold' | 'low-stock';
   notes?: string;
   dateAdded: string;
+  image?: string;
 }
 
 export type Category = 

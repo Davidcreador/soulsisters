@@ -31,14 +31,6 @@ export function Sidebar() {
   const { theme, toggleTheme } = useTheme();
   const { logout, user, isLoading } = useAuth();
 
-  if (isLoading || !user) {
-    return (
-      <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border p-4">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -46,7 +38,7 @@ export function Sidebar() {
         setMobileOpen(false);
       }
     };
-    
+
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -57,6 +49,14 @@ export function Sidebar() {
     const width = isMobile ? 0 : (collapsed ? 80 : 260);
     document.documentElement.style.setProperty("--sidebar-width", `${width}px`);
   }, [collapsed, isMobile]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border p-4">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <>

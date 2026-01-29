@@ -1,8 +1,7 @@
-import { Product } from '../types';
+import type { Product } from '../types';
 
-export const initialInventory: Product[] = [
+export const initialInventory: Omit<Product, '_id' | '_creationTime'>[] = [
   {
-    id: '1',
     name: 'Collar 5 flores',
     quantity: 0,
     storePrice: 9500,
@@ -14,7 +13,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '2',
     name: 'Collar 5 corazones globo',
     quantity: 0,
     storePrice: 11000,
@@ -26,7 +24,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '3',
     name: 'Collar corazones con relicarios',
     quantity: 0,
     storePrice: 11000,
@@ -38,7 +35,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '4',
     name: 'Collar corazon maxi blanco',
     quantity: 0,
     storePrice: 12000,
@@ -50,7 +46,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '5',
     name: 'Collar ositos animal print',
     quantity: 0,
     storePrice: 11000,
@@ -62,7 +57,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '6',
     name: 'Collar de perlas',
     quantity: 0,
     storePrice: 5000,
@@ -74,7 +68,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '7',
     name: 'Collar doble ojo rojo',
     quantity: 0,
     storePrice: 7000,
@@ -86,7 +79,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '8',
     name: 'Cadena doble',
     quantity: 0,
     storePrice: 5000,
@@ -98,7 +90,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '9',
     name: 'Collar estrella de mar',
     quantity: 0,
     storePrice: 9200,
@@ -110,7 +101,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '10',
     name: 'Cadenitas minimalista - Cora blanco/negro',
     quantity: 5,
     storePrice: 5500,
@@ -122,7 +112,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '11',
     name: 'Collar eslabones rojos corazon rojo',
     quantity: 0,
     storePrice: 13000,
@@ -134,7 +123,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '12',
     name: 'Aretes cherry',
     quantity: 0,
     storePrice: 4000,
@@ -146,7 +134,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '13',
     name: 'Aretes doble flor maxi',
     quantity: 0,
     storePrice: 6500,
@@ -158,7 +145,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '14',
     name: 'Aretes coral',
     quantity: 0,
     storePrice: 6500,
@@ -170,7 +156,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '15',
     name: 'Aretes margaritas blancos',
     quantity: 0,
     storePrice: 6000,
@@ -182,7 +167,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '16',
     name: 'Aretes chunky dorado',
     quantity: 0,
     storePrice: 5000,
@@ -194,7 +178,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '17',
     name: 'Arete mezcla dorado plateado',
     quantity: 0,
     storePrice: 7000,
@@ -206,7 +189,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '18',
     name: 'Pulseras corazon',
     quantity: 2,
     storePrice: 7000,
@@ -218,7 +200,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '19',
     name: 'Pulsera hombre plateada cruz',
     quantity: 0,
     storePrice: 6000,
@@ -230,7 +211,6 @@ export const initialInventory: Product[] = [
     dateAdded: '2025-01-01'
   },
   {
-    id: '20',
     name: 'Pulsera hombre con tornillo',
     quantity: 0,
     storePrice: 5000,

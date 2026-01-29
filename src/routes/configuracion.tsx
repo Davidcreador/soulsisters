@@ -2,11 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Users, 
-  Download, 
-  Upload, 
-  Trash2, 
+import {
+  Users,
+  Download,
+  Upload,
   AlertTriangle,
   Store,
   Package,
