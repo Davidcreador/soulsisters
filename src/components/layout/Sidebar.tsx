@@ -97,6 +97,7 @@ export function Sidebar() {
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className={`fixed left-0 top-0 h-screen bg-background border-r border-border z-40 flex flex-col overflow-hidden
           ${isMobile ? "shadow-2xl" : ""}`}
+        style={{ backgroundColor: 'hsl(var(--background))' }}
       >
         {/* Logo */}
         <div className="h-16 flex items-center px-4 border-b border-border">
