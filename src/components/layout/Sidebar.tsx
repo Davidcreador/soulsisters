@@ -10,10 +10,12 @@ import {
   Sun,
   Moon,
   Menu,
-  X
+  X,
+  LogOut
 } from "lucide-react";
 import { useTheme } from "../../lib/theme";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../lib/auth";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Resumen" },
@@ -27,6 +29,15 @@ export function Sidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { logout, user, isLoading } = useAuth();
+
+  if (isLoading || !user) {
+    return (
+      <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border p-4">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   useEffect(() => {
     const checkMobile = () => {
@@ -147,7 +158,7 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Bottom Actions */}
+          {/* Bottom Actions */}
         <div className="p-3 border-t border-border space-y-2">
           {/* Theme Toggle */}
           <button
@@ -162,6 +173,19 @@ export function Sidebar() {
             {!collapsed && (
               <span className="whitespace-nowrap overflow-hidden text-sm">
                 {theme === "light" ? "Modo Oscuro" : "Modo Claro"}
+              </span>
+            )}
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={() => logout()}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && (
+              <span className="whitespace-nowrap overflow-hidden text-sm">
+                Cerrar Sesión
               </span>
             )}
           </button>

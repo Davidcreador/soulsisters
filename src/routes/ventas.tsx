@@ -5,6 +5,7 @@ import { formatCurrency } from "../lib/utils";
 import { useToastContext } from "../components/ui/ToastProvider";
 import { Search, Grid3X3, List, Package, WifiOff, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 
 const categories = [
   { value: "all", label: "Todos" },
@@ -26,15 +27,23 @@ interface SaleRecord {
 }
 
 export const Route = createFileRoute("/ventas")({
-  component: Ventas,
+  component: VentasWithAuth,
 });
+
+function VentasWithAuth() {
+  return (
+    <ProtectedRoute allowedRoles={["admin", "pos"]}>
+      <Ventas />
+    </ProtectedRoute>
+  );
+}
 
 function Ventas() {
   const products = useProducts();
   const sellProduct = useSellProduct();
   const { addToast } = useToastContext();
 
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);

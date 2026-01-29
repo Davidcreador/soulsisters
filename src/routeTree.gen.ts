@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VentasRouteImport } from './routes/ventas'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConfiguracionRouteImport } from './routes/configuracion'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InventarioIndexRouteImport } from './routes/inventario/index'
@@ -17,6 +18,11 @@ import { Route as InventarioIndexRouteImport } from './routes/inventario/index'
 const VentasRoute = VentasRouteImport.update({
   id: '/ventas',
   path: '/ventas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracionRoute = ConfiguracionRouteImport.update({
@@ -38,12 +44,14 @@ const InventarioIndexRoute = InventarioIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/configuracion': typeof ConfiguracionRoute
+  '/login': typeof LoginRoute
   '/ventas': typeof VentasRoute
   '/inventario/': typeof InventarioIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/configuracion': typeof ConfiguracionRoute
+  '/login': typeof LoginRoute
   '/ventas': typeof VentasRoute
   '/inventario': typeof InventarioIndexRoute
 }
@@ -51,20 +59,28 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/configuracion': typeof ConfiguracionRoute
+  '/login': typeof LoginRoute
   '/ventas': typeof VentasRoute
   '/inventario/': typeof InventarioIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/configuracion' | '/ventas' | '/inventario/'
+  fullPaths: '/' | '/configuracion' | '/login' | '/ventas' | '/inventario/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/configuracion' | '/ventas' | '/inventario'
-  id: '__root__' | '/' | '/configuracion' | '/ventas' | '/inventario/'
+  to: '/' | '/configuracion' | '/login' | '/ventas' | '/inventario'
+  id:
+    | '__root__'
+    | '/'
+    | '/configuracion'
+    | '/login'
+    | '/ventas'
+    | '/inventario/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfiguracionRoute: typeof ConfiguracionRoute
+  LoginRoute: typeof LoginRoute
   VentasRoute: typeof VentasRoute
   InventarioIndexRoute: typeof InventarioIndexRoute
 }
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/ventas'
       fullPath: '/ventas'
       preLoaderRoute: typeof VentasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracion': {
@@ -105,6 +128,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfiguracionRoute: ConfiguracionRoute,
+  LoginRoute: LoginRoute,
   VentasRoute: VentasRoute,
   InventarioIndexRoute: InventarioIndexRoute,
 }
