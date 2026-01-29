@@ -276,13 +276,14 @@ function Ventas() {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 flex-1 scrollbar-hide">
+          <div className="space-y-3">
+            {/* Category Pills - Horizontal Scroll */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
               {categories.map((cat) => (
                 <button
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                     selectedCategory === cat.value
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -293,12 +294,13 @@ function Ventas() {
               ))}
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer flex-shrink-0">
+            {/* Solo disponibles checkbox */}
+            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
               <input
                 type="checkbox"
                 checked={showOnlyAvailable}
                 onChange={(e) => setShowOnlyAvailable(e.target.checked)}
-                className="rounded border-input"
+                className="rounded border-input w-4 h-4"
               />
               Solo disponibles
             </label>
@@ -307,7 +309,7 @@ function Ventas() {
       </div>
 
       {/* Products */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         {filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -319,8 +321,8 @@ function Ventas() {
             </p>
           </div>
         ) : isMobile ? (
-          /* Mobile Cards */
-          <div className="space-y-3">
+          /* Mobile Cards - Full Width */
+          <div className="space-y-3 -mx-4 px-4">
             {filteredProducts.map((product) => (
               <motion.div
                 key={product._id}
@@ -332,9 +334,9 @@ function Ventas() {
                 }`}
               >
                 <div className="p-4">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3">
                     {/* Product Image */}
-                    <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
                       {product.image ? (
                         <img
                           src={product.image}
@@ -342,20 +344,20 @@ function Ventas() {
                           className="w-full h-full object-cover rounded-lg"
                         />
                       ) : (
-                        <Package className="w-10 h-10 text-muted-foreground" />
+                        <Package className="w-8 h-8 text-muted-foreground" />
                       )}
                     </div>
 
                     {/* Product Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate mb-1">
+                      <h3 className="font-medium text-foreground text-sm truncate mb-1">
                         {product.name}
                       </h3>
-                      <p className="text-2xl font-bold text-foreground mb-2">
+                      <p className="text-xl font-bold text-foreground mb-1">
                         {formatCurrency(product.suggestedPrice)}
                       </p>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full border ${getStockColor(
+                        className={`inline-block text-xs px-2 py-0.5 rounded-full border ${getStockColor(
                           product.quantity
                         )}`}
                       >
@@ -368,7 +370,7 @@ function Ventas() {
                   <button
                     onClick={() => handleSellClick(product)}
                     disabled={product.quantity === 0}
-                    className={`w-full mt-4 py-3 rounded-xl font-semibold text-base transition-colors min-h-[48px] ${
+                    className={`w-full mt-3 py-3 rounded-lg font-semibold text-sm transition-colors min-h-[44px] ${
                       product.quantity === 0
                         ? "bg-muted text-muted-foreground cursor-not-allowed"
                         : "bg-green-600 text-white hover:bg-green-700 active:scale-95"
