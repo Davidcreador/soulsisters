@@ -1,20 +1,13 @@
-import { useState, useMemo } from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  flexRender,
-  type SortingState,
-} from "@tanstack/react-table";
+import { useState, useMemo, useEffect } from "react";
 import { useProducts, useDeleteProduct, useSellProduct } from "../hooks/useInventory";
-import { Search, Plus, Filter, Edit2, Trash2, ShoppingCart, AlertCircle, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { Search, Plus, Filter, Edit2, Trash2, ShoppingCart, AlertCircle, Image as ImageIcon, Package } from "lucide-react";
 import { formatCurrency, getCategoryLabel, getStatusLabel, getStatusColor } from "../lib/utils";
 import { ProductModal } from "./ProductModal";
 import { ConfirmModal } from "./ConfirmModal";
-import { motion } from "framer-motion";
+import { InventoryCard } from "./InventoryCard";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToastContext } from "./ui/ToastProvider";
+import PullToRefresh from "react-pull-to-refresh";
 
 const categories = [
   { value: "all", label: "Todos" },
@@ -50,13 +43,23 @@ export function Inventory() {
   const sellProduct = useSellProduct();
   const { addToast } = useToastContext();
 
-  const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [confirmSell, setConfirmSell] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const uncategorizedCount = useMemo(() => {
     if (!products) return 0;
@@ -65,144 +68,31 @@ export function Inventory() {
 
   const filteredData = useMemo(() => {
     if (!products) return [];
-    if (categoryFilter === "all") return products;
+    let data = products;
+    
+    // Apply category filter
     if (categoryFilter === "uncategorized") {
-      return products.filter((p) => p.category === "other");
+      data = data.filter((p) => p.category === "other");
+    } else if (categoryFilter !== "all") {
+      data = data.filter((p) => p.category === categoryFilter);
     }
-    return products.filter((p) => p.category === categoryFilter);
-  }, [products, categoryFilter]);
+    
+    // Apply search filter
+    if (globalFilter) {
+      const searchTerm = globalFilter.toLowerCase();
+      data = data.filter((p) =>
+        p.name.toLowerCase().includes(searchTerm) ||
+        (p.notes && p.notes.toLowerCase().includes(searchTerm))
+      );
+    }
+    
+    return data;
+  }, [products, categoryFilter, globalFilter]);
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: "name",
-      header: "Producto",
-      cell: ({ row }: { row: any }) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-            {row.original.image ? (
-              <img 
-                src={row.original.image} 
-                alt={row.original.name}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            ) : (
-              <ImageIcon className="w-5 h-5 text-muted-foreground" />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-foreground">{row.original.name}</p>
-            {row.original.notes && (
-              <p className="text-sm text-muted-foreground">{row.original.notes}</p>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "category",
-      header: "Categoría",
-      cell: ({ row }: { row: any }) => {
-        const isUncategorized = row.original.category === "other";
-        return (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-            isUncategorized 
-              ? "bg-yellow-100 text-yellow-800 border border-yellow-200" 
-              : "bg-secondary text-secondary-foreground"
-          }`}>
-            {isUncategorized && <AlertCircle className="w-3 h-3" />}
-            {getCategoryLabel(row.original.category)}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: "quantity",
-      header: "Cantidad",
-      cell: ({ row }: { row: any }) => (
-        <span className="font-medium text-foreground">{row.original.quantity}</span>
-      ),
-    },
-    {
-      accessorKey: "storePrice",
-      header: "Precio Compra",
-      cell: ({ row }: { row: any }) => (
-        <span className="text-foreground">{formatCurrency(row.original.storePrice)}</span>
-      ),
-    },
-    {
-      accessorKey: "suggestedPrice",
-      header: "Precio Venta",
-      cell: ({ row }: { row: any }) => (
-        <span className="font-medium text-foreground">{formatCurrency(row.original.suggestedPrice)}</span>
-      ),
-    },
-    {
-      accessorKey: "profitPercentage",
-      header: "Ganancia",
-      cell: ({ row }: { row: any }) => (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          {row.original.profitPercentage}%
-        </span>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Estado",
-      cell: ({ row }: { row: any }) => (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(row.original.status)}`}>
-          {getStatusLabel(row.original.status)}
-        </span>
-      ),
-    },
-    {
-      id: "actions",
-      header: "Acciones",
-      cell: ({ row }: { row: any }) => (
-        <div className="flex items-center justify-end gap-1">
-          {row.original.status !== "sold" && row.original.quantity > 0 && (
-            <button
-              onClick={() => setConfirmSell(row.original)}
-              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-              title="Vender"
-            >
-              <ShoppingCart className="w-4 h-4" />
-            </button>
-          )}
-          <button
-            onClick={() => {
-              setEditingProduct(row.original);
-              setIsProductModalOpen(true);
-            }}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Editar"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => setConfirmDelete(row.original)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Eliminar"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      ),
-    },
-  ], []);
-
-  const table = useReactTable({
-    data: filteredData,
-    columns,
-    state: { sorting, globalFilter },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 10 } },
-  });
+  const handleRefresh = async () => {
+    // Force re-fetch by invalidating the query
+    window.location.reload();
+  };
 
   const handleSell = async () => {
     if (confirmSell) {
@@ -246,6 +136,29 @@ export function Inventory() {
     }
   };
 
+  const handleCardSell = (product: any) => {
+    setConfirmSell(product);
+    addToast({
+      title: "Desliza para vender",
+      description: `Desliza ${product.name} a la izquierda para vender rápidamente`,
+      type: "info",
+    });
+  };
+
+  const handleCardEdit = (product: any) => {
+    setEditingProduct(product);
+    setIsProductModalOpen(true);
+    addToast({
+      title: "Editando producto",
+      description: `Abriendo ${product.name} para editar`,
+      type: "info",
+    });
+  };
+
+  const handleCardDelete = (product: any) => {
+    setConfirmDelete(product);
+  };
+
   if (products === undefined) {
     return (
       <div className="space-y-6">
@@ -265,7 +178,7 @@ export function Inventory() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-6 pb-24 md:pb-0"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -274,12 +187,13 @@ export function Inventory() {
           <p className="text-muted-foreground">Gestiona tus productos de joyería</p>
         </div>
         
+        {/* Desktop Add Button */}
         <button
           onClick={() => {
             setEditingProduct(null);
             setIsProductModalOpen(true);
           }}
-          className="btn btn-primary"
+          className="hidden md:flex btn btn-primary"
         >
           <Plus className="w-5 h-5" />
           Agregar Producto
@@ -346,100 +260,166 @@ export function Inventory() {
         </motion.div>
       )}
 
-      {/* Table */}
-      <motion.div variants={itemVariants} className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted border-b border-border">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-border">
-              {table.getRowModel().rows.map((row) => (
-                <tr 
-                  key={row.id} 
-                  className="hover:bg-muted/50 transition-colors"
+      {/* Mobile Cards with Pull-to-Refresh */}
+      {isMobile ? (
+        <motion.div variants={itemVariants}>
+          <PullToRefresh onRefresh={handleRefresh} className="overflow-visible">
+            <div className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {filteredData.map((product) => (
+                  <InventoryCard
+                    key={product._id}
+                    product={product}
+                    onSell={handleCardSell}
+                    onEdit={handleCardEdit}
+                    onDelete={handleCardDelete}
+                  />
+                ))}
+              </AnimatePresence>
+              
+              {filteredData.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-12"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-6 py-4">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {table.getRowModel().rows.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-              <Search className="w-8 h-8 text-muted-foreground" />
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center"
+                  >
+                    <Package className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">No se encontraron productos</p>
+                  <p className="text-sm text-muted-foreground mt-1">Intenta con otros filtros de búsqueda</p>
+                </motion.div>
+              )}
             </div>
-            <p className="text-muted-foreground font-medium">No se encontraron productos</p>
-            <p className="text-sm text-muted-foreground mt-1">Intenta con otros filtros de búsqueda</p>
+          </PullToRefresh>
+          
+          {/* Mobile Floating Action Button */}
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setEditingProduct(null);
+              setIsProductModalOpen(true);
+            }}
+            className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center z-50"
+          >
+            <Plus className="w-6 h-6" />
+          </motion.button>
+        </motion.div>
+      ) : (
+        /* Desktop Table */
+        <motion.div variants={itemVariants} className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted border-b border-border">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Producto</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categoría</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cantidad</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Precio Compra</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Precio Venta</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ganancia</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredData.map((product) => (
+                  <tr key={product._id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          {product.image ? (
+                            <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{product.name}</p>
+                          {product.notes && (
+                            <p className="text-sm text-muted-foreground">{product.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                        product.category === "other"
+                          ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          : "bg-secondary text-secondary-foreground"
+                      }`}>
+                        {product.category === "other" && <AlertCircle className="w-3 h-3" />}
+                        {getCategoryLabel(product.category)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-foreground">{product.quantity}</span>
+                    </td>
+                    <td className="px-6 py-4">{formatCurrency(product.storePrice)}</td>
+                    <td className="px-6 py-4 font-medium">{formatCurrency(product.suggestedPrice)}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {product.profitPercentage}%
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(product.status)}`}>
+                        {getStatusLabel(product.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-1">
+                        {product.status !== "sold" && product.quantity > 0 && (
+                          <button
+                            onClick={() => setConfirmSell(product)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Vender"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setEditingProduct(product);
+                            setIsProductModalOpen(true);
+                          }}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        
+                        <button
+                          onClick={() => setConfirmDelete(product)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/30">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Mostrando {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} a{" "}
-              {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getPrePaginationRowModel().rows.length)}{" "}
-              de {table.getPrePaginationRowModel().rows.length} productos
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            
-            <span className="text-sm text-muted-foreground px-2">
-              Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
-            </span>
-            
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Mostrar:</span>
-            <select
-              value={table.getState().pagination.pageSize}
-              onChange={(e) => table.setPageSize(Number(e.target.value))}
-              className="input w-20 py-1"
-            >
-              {[10, 25, 50, 100].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </motion.div>
+          {filteredData.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <Search className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground font-medium">No se encontraron productos</p>
+              <p className="text-sm text-muted-foreground mt-1">Intenta con otros filtros de búsqueda</p>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       <ProductModal
         isOpen={isProductModalOpen}
