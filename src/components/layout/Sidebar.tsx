@@ -52,7 +52,7 @@ export function Sidebar() {
 
   if (isLoading || !user) {
     return (
-      <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border p-4">
+      <div className="fixed left-0 top-0 h-screen w-64 bg-background border-r border-border p-4">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -95,7 +95,7 @@ export function Sidebar() {
           x: isMobile ? (mobileOpen ? 0 : -260) : 0
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className={`fixed left-0 top-0 h-screen bg-card border-r border-border z-40 flex flex-col overflow-hidden
+        className={`fixed left-0 top-0 h-screen bg-background border-r border-border z-40 flex flex-col overflow-hidden
           ${isMobile ? "shadow-2xl" : ""}`}
       >
         {/* Logo */}
