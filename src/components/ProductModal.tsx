@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useAddProduct, useUpdateProduct } from "../hooks/useInventory";
-import { X } from "lucide-react";
+import { X, Upload, Image as ImageIcon } from "lucide-react";
 import { calculateProfitPercentage } from "../lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToastContext } from "./ui/ToastProvider";
 
 const categories = [
   { value: "necklaces", label: "Collares" },
@@ -12,11 +14,41 @@ const categories = [
   { value: "other", label: "Otros" },
 ];
 
-export function ProductModal({ isOpen, onClose, product }) {
+interface Product {
+  _id: string;
+  name: string;
+  quantity: number;
+  storePrice: number;
+  suggestedPrice: number;
+  profitPercentage: number;
+  category: string;
+  status: string;
+  notes?: string;
+  image?: string;
+}
+
+interface ProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  product: Product | null;
+}
+
+export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const addProduct = useAddProduct();
   const updateProduct = useUpdateProduct();
+  const { addToast } = useToastContext();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    quantity: number;
+    storePrice: number;
+    suggestedPrice: number;
+    profitPercentage: number;
+    category: "necklaces" | "earrings" | "bracelets" | "rings" | "sets" | "other";
+    status: "available" | "sold" | "low-stock";
+    notes: string;
+    image: string;
+  }>({
     name: "",
     quantity: 0,
     storePrice: 0,
@@ -25,7 +57,9 @@ export function ProductModal({ isOpen, onClose, product }) {
     category: "necklaces",
     status: "available",
     notes: "",
+    image: "",
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) {
@@ -35,10 +69,12 @@ export function ProductModal({ isOpen, onClose, product }) {
         storePrice: product.storePrice,
         suggestedPrice: product.suggestedPrice,
         profitPercentage: product.profitPercentage,
-        category: product.category,
-        status: product.status,
+        category: product.category as "necklaces" | "earrings" | "bracelets" | "rings" | "sets" | "other",
+        status: product.status as "available" | "sold" | "low-stock",
         notes: product.notes || "",
+        image: product.image || "",
       });
+      setImagePreview(product.image || null);
     } else {
       setFormData({
         name: "",
@@ -49,7 +85,9 @@ export function ProductModal({ isOpen, onClose, product }) {
         category: "necklaces",
         status: "available",
         notes: "",
+        image: "",
       });
+      setImagePreview(null);
     }
   }, [product, isOpen]);
 
@@ -58,143 +96,239 @@ export function ProductModal({ isOpen, onClose, product }) {
     setFormData((prev) => ({ ...prev, profitPercentage: profit }));
   }, [formData.storePrice, formData.suggestedPrice]);
 
-  const handleSubmit = async (e) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setImagePreview(result);
+        setFormData((prev) => ({ ...prev, image: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
+      // Build update object with only defined values
+      const updateData: any = {
+        name: formData.name,
+        quantity: formData.quantity,
+        storePrice: formData.storePrice,
+        suggestedPrice: formData.suggestedPrice,
+        profitPercentage: formData.profitPercentage,
+        category: formData.category,
+        status: formData.status,
+      };
+      
+      // Only add optional fields if they have values
+      if (formData.notes && formData.notes.trim() !== "") {
+        updateData.notes = formData.notes;
+      }
+      if (formData.image && formData.image.trim() !== "") {
+        updateData.image = formData.image;
+      }
+      
       if (product) {
-        await updateProduct({ id: product._id, ...formData });
+        await updateProduct({ 
+          id: product._id as any, 
+          ...updateData,
+        });
+        addToast({
+          title: "Producto actualizado",
+          description: `${formData.name} ha sido actualizado exitosamente`,
+          type: "success",
+        });
       } else {
-        await addProduct(formData);
+        await addProduct(updateData);
+        addToast({
+          title: "Producto agregado",
+          description: `${formData.name} ha sido agregado al inventario`,
+          type: "success",
+        });
       }
       onClose();
     } catch (error) {
       console.error("Error saving product:", error);
-      alert("Error al guardar el producto");
+      addToast({
+        title: "Error",
+        description: "No se pudo guardar el producto",
+        type: "error",
+      });
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900">
-            {product ? "Editar Producto" : "Agregar Producto"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+    <AnimatePresence>
+      {isOpen && (
+        <div className="modal-overlay">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="modal-content w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-              placeholder="Nombre del producto"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h2 className="text-xl font-bold text-foreground">
+                {product ? "Editar Producto" : "Agregar Producto"}
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
               >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (CRC)</label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={formData.storePrice}
-                onChange={(e) => setFormData({ ...formData, storePrice: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta (CRC)</label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={formData.suggestedPrice}
-                onChange={(e) => setFormData({ ...formData, suggestedPrice: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
-            </div>
-          </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">Imagen del Producto</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-24 rounded-xl border-2 border-dashed border-border bg-muted flex items-center justify-center overflow-hidden">
+                    {imagePreview ? (
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <label className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg cursor-pointer transition-colors">
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm">Subir imagen</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ganancia (%)</label>
-            <input
-              type="number"
-              value={formData.profitPercentage}
-              readOnly
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-            />
-            <p className="text-xs text-gray-500 mt-1">Calculado automaticamente</p>
-          </div>
+              {/* Name */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">Nombre</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input"
+                  placeholder="Nombre del producto"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-              placeholder="Notas adicionales..."
-            />
-          </div>
+              {/* Quantity and Category */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">Cantidad</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                    className="input"
+                  />
+                </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
-            >
-              {product ? "Guardar Cambios" : "Agregar Producto"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">Categoría</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as "necklaces" | "earrings" | "bracelets" | "rings" | "sets" | "other" })}
+                    className="input"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Prices */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">Precio Compra (CRC)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.storePrice}
+                    onChange={(e) => setFormData({ ...formData, storePrice: parseInt(e.target.value) || 0 })}
+                    className="input"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">Precio Venta (CRC)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.suggestedPrice}
+                    onChange={(e) => setFormData({ ...formData, suggestedPrice: parseInt(e.target.value) || 0 })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Profit */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">Ganancia (%)</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={formData.profitPercentage}
+                    readOnly
+                    className="input bg-muted w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">Calculado automáticamente</span>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">Notas (opcional)</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="input resize-none"
+                  placeholder="Notas adicionales..."
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                >
+                  {product ? "Guardar Cambios" : "Agregar Producto"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

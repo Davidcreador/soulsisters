@@ -22,6 +22,7 @@ export default defineSchema({
       v.literal("low-stock")
     ),
     notes: v.optional(v.string()),
+    image: v.optional(v.string()),
     dateAdded: v.string(),
   })
     .index("by_category", ["category"])

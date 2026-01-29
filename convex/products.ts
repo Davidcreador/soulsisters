@@ -108,6 +108,7 @@ export const add = mutation({
       v.literal("low-stock")
     ),
     notes: v.optional(v.string()),
+    image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const product = await ctx.db.insert("products", {
@@ -142,6 +143,7 @@ export const seedBatch = mutation({
           v.literal("low-stock")
         ),
         notes: v.optional(v.string()),
+        image: v.optional(v.string()),
         dateAdded: v.string(),
       })
     ),
@@ -152,7 +154,7 @@ export const seedBatch = mutation({
       try {
         const id = await ctx.db.insert("products", product);
         results.push({ success: true, id, name: product.name });
-      } catch (error) {
+      } catch (error: any) {
         results.push({ success: false, name: product.name, error: error.message });
       }
     }
@@ -187,6 +189,7 @@ export const update = mutation({
       )
     ),
     notes: v.optional(v.string()),
+    image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;

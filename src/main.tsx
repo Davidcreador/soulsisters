@@ -14,6 +14,9 @@ declare module "@tanstack/react-router" {
   }
 }
 
+// Set initial sidebar width CSS variable
+document.documentElement.style.setProperty("--sidebar-width", "260px");
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ConvexProvider client={convex}>

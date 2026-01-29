@@ -1,4 +1,16 @@
 import { AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText: string;
+  danger?: boolean;
+}
 
 export function ConfirmModal({
   isOpen,
@@ -9,42 +21,48 @@ export function ConfirmModal({
   confirmText,
   cancelText,
   danger = false,
-}) {
-  if (!isOpen) return null;
-
+}: ConfirmModalProps) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-        <div className="flex items-center gap-3 mb-4">
-          {danger && (
-            <div className="p-2 bg-red-100 rounded-full">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="modal-overlay">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="modal-content w-full max-w-md"
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                {danger && (
+                  <div className="p-2 bg-red-100 rounded-full">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  </div>
+                )}
+                <h2 className="text-xl font-bold text-foreground">{title}</h2>
+              </div>
+
+              <p className="text-muted-foreground mb-6">{message}</p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={onClose}
+                  className="btn btn-secondary"
+                >
+                  {cancelText}
+                </button>
+                <button
+                  onClick={onConfirm}
+                  className={`btn ${danger ? "btn-destructive" : "btn-primary"}`}
+                >
+                  {confirmText}
+                </button>
+              </div>
             </div>
-          )}
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          </motion.div>
         </div>
-
-        <p className="text-gray-600 mb-6">{message}</p>
-
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            {cancelText}
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              danger
-                ? "bg-red-600 text-white hover:bg-red-700"
-                : "bg-pink-600 text-white hover:bg-pink-700"
-            }`}
-          >
-            {confirmText}
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }
