@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useProducts, useSellProduct } from "../hooks/useInventory";
 import { formatCurrency } from "../lib/utils";
 import { useToastContext } from "../components/ui/ToastProvider";
-import { Search, Grid3X3, List, Package, WifiOff, Check } from "lucide-react";
+import { Search, Grid3X3, List, Package, WifiOff, Check, Plus, Minus, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
@@ -53,6 +53,17 @@ function Ventas() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [undoSale, setUndoSale] = useState<SaleRecord | null>(null);
   const [undoTimer, setUndoTimer] = useState(10);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Monitor online/offline status
   useEffect(() => {
@@ -152,8 +163,6 @@ function Ventas() {
   const handleUndo = async () => {
     if (!undoSale) return;
 
-    // In a real implementation, you'd need to restore the stock
-    // For now, we'll just show a message
     addToast({
       title: "Venta anulada",
       description: `Se restauró ${undoSale.quantity}x ${undoSale.productName}`,
@@ -227,28 +236,31 @@ function Ventas() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                <Grid3X3 className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === "list"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                <List className="w-5 h-5" />
-              </button>
-            </div>
+            {/* View Toggle - Desktop Only */}
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  <Grid3X3 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === "list"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  <List className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Search */}
@@ -265,23 +277,23 @@ function Ventas() {
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setSelectedCategory(cat.value)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === cat.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 flex-1 scrollbar-hide">
+              {categories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                    selectedCategory === cat.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
 
-            <div className="flex-1" />
-
-            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer flex-shrink-0">
               <input
                 type="checkbox"
                 checked={showOnlyAvailable}
@@ -306,7 +318,70 @@ function Ventas() {
               Intenta con otros términos de búsqueda o filtros
             </p>
           </div>
+        ) : isMobile ? (
+          /* Mobile Cards */
+          <div className="space-y-3">
+            {filteredProducts.map((product) => (
+              <motion.div
+                key={product._id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`bg-card border border-border rounded-xl overflow-hidden ${
+                  product.quantity === 0 ? "opacity-60" : ""
+                }`}
+              >
+                <div className="p-4">
+                  <div className="flex items-start gap-4">
+                    {/* Product Image */}
+                    <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <Package className="w-10 h-10 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate mb-1">
+                        {product.name}
+                      </h3>
+                      <p className="text-2xl font-bold text-foreground mb-2">
+                        {formatCurrency(product.suggestedPrice)}
+                      </p>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full border ${getStockColor(
+                          product.quantity
+                        )}`}
+                      >
+                        {getStockLabel(product.quantity)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sell Button - Full Width on Mobile */}
+                  <button
+                    onClick={() => handleSellClick(product)}
+                    disabled={product.quantity === 0}
+                    className={`w-full mt-4 py-3 rounded-xl font-semibold text-base transition-colors min-h-[48px] ${
+                      product.quantity === 0
+                        ? "bg-muted text-muted-foreground cursor-not-allowed"
+                        : "bg-green-600 text-white hover:bg-green-700 active:scale-95"
+                    }`}
+                  >
+                    {product.quantity === 0 ? "Agotado" : "Vender"}
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         ) : viewMode === "grid" ? (
+          /* Desktop Grid */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredProducts.map((product) => (
               <motion.div
@@ -366,6 +441,7 @@ function Ventas() {
             ))}
           </div>
         ) : (
+          /* Desktop List */
           <div className="space-y-2">
             {filteredProducts.map((product) => (
               <motion.div
@@ -427,126 +503,160 @@ function Ventas() {
         )}
       </div>
 
-      {/* Sell Modal */}
+      {/* Mobile Sell Modal - Bottom Sheet Style */}
       <AnimatePresence>
         {isSellModalOpen && selectedProduct && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
             onClick={() => setIsSellModalOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-card rounded-2xl p-6 w-full max-w-md"
+              initial={isMobile ? { y: "100%" } : { scale: 0.9, y: 20 }}
+              animate={isMobile ? { y: 0 } : { scale: 1, y: 0 }}
+              exit={isMobile ? { y: "100%" } : { scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className={`bg-card w-full ${
+                isMobile 
+                  ? "rounded-t-3xl max-h-[90vh] overflow-y-auto" 
+                  : "rounded-2xl max-w-md"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-xl font-bold text-foreground mb-4">
-                Confirmar Venta
-              </h2>
+              {/* Mobile Handle Bar */}
+              {isMobile && (
+                <div className="sticky top-0 bg-card pt-3 pb-2 px-6 z-10">
+                  <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4" />
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-foreground">Confirmar Venta</h2>
+                    <button
+                      onClick={() => setIsSellModalOpen(false)}
+                      className="p-2 hover:bg-muted rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
-                  {selectedProduct.image ? (
-                    <img
-                      src={selectedProduct.image}
-                      alt={selectedProduct.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <Package className="w-10 h-10 text-muted-foreground" />
+              <div className="p-6 pt-2">
+                {!isMobile && (
+                  <h2 className="text-xl font-bold text-foreground mb-4">
+                    Confirmar Venta
+                  </h2>
+                )}
+
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-20 h-20 bg-muted rounded-xl flex items-center justify-center">
+                    {selectedProduct.image ? (
+                      <img
+                        src={selectedProduct.image}
+                        alt={selectedProduct.name}
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      <Package className="w-10 h-10 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground text-lg">
+                      {selectedProduct.name}
+                    </h3>
+                    <p className="text-3xl font-bold text-foreground">
+                      {formatCurrency(selectedProduct.suggestedPrice)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Stock disponible: {selectedProduct.quantity}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quantity Selector - Mobile Optimized */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-foreground mb-3">
+                    Cantidad (máx. 5)
+                  </label>
+                  <div className="flex items-center justify-center gap-4">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                      className="w-14 h-14 rounded-2xl bg-muted text-foreground flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                    >
+                      <Minus className="w-6 h-6" />
+                    </button>
+                    <span className="text-4xl font-bold text-foreground w-20 text-center">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setQuantity(Math.min(5, selectedProduct.quantity, quantity + 1))
+                      }
+                      disabled={quantity >= selectedProduct.quantity || quantity >= 5}
+                      className="w-14 h-14 rounded-2xl bg-muted text-foreground flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                    >
+                      <Plus className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="bg-muted rounded-2xl p-4 mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-lg">Total</span>
+                    <span className="text-3xl font-bold text-foreground">
+                      {formatCurrency(selectedProduct.suggestedPrice * quantity)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  {!isMobile && (
+                    <button
+                      onClick={() => setIsSellModalOpen(false)}
+                      className="flex-1 py-4 rounded-xl bg-muted text-foreground font-semibold text-lg"
+                    >
+                      Cancelar
+                    </button>
                   )}
-                </div>
-                <div>
-                  <h3 className="font-medium text-foreground">
-                    {selectedProduct.name}
-                  </h3>
-                  <p className="text-2xl font-bold text-foreground">
-                    {formatCurrency(selectedProduct.suggestedPrice)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Stock disponible: {selectedProduct.quantity}
-                  </p>
-                </div>
-              </div>
-
-              {/* Quantity Selector */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Cantidad (máx. 5)
-                </label>
-                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 rounded-lg bg-muted text-foreground font-bold"
+                    onClick={handleConfirmSale}
+                    className="flex-1 py-4 rounded-xl bg-green-600 text-white font-semibold text-lg hover:bg-green-700 active:scale-95 transition-transform"
                   >
-                    -
-                  </button>
-                  <span className="text-2xl font-bold text-foreground w-12 text-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setQuantity(Math.min(5, selectedProduct.quantity, quantity + 1))
-                    }
-                    disabled={quantity >= selectedProduct.quantity || quantity >= 5}
-                    className="w-10 h-10 rounded-lg bg-muted text-foreground font-bold disabled:opacity-50"
-                  >
-                    +
+                    Confirmar Venta
                   </button>
                 </div>
-              </div>
-
-              {/* Total */}
-              <div className="bg-muted rounded-lg p-4 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="text-2xl font-bold text-foreground">
-                    {formatCurrency(selectedProduct.suggestedPrice * quantity)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setIsSellModalOpen(false)}
-                  className="flex-1 py-3 rounded-lg bg-muted text-foreground font-medium"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConfirmSale}
-                  className="flex-1 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700"
-                >
-                  Confirmar Venta
-                </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Undo Toast */}
+      {/* Undo Toast - Mobile Optimized */}
       <AnimatePresence>
         {undoSale && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center gap-4"
+            className={`fixed ${
+              isMobile ? "bottom-4 left-4 right-4" : "bottom-6 left-1/2 transform -translate-x-1/2"
+            } bg-foreground text-background px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center justify-between gap-4`}
           >
-            <div className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-500" />
-              <span className="font-medium">Venta completada</span>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold">Venta completada</p>
+                <p className="text-sm text-background/70">{undoSale.quantity}x {undoSale.productName}</p>
+              </div>
             </div>
-            <div className="w-px h-6 bg-background/20" />
             <button
               onClick={handleUndo}
-              className="text-sm font-medium text-background/80 hover:text-background underline"
+              className="px-4 py-2 bg-background/20 rounded-xl text-sm font-semibold hover:bg-background/30 transition-colors whitespace-nowrap"
             >
               Deshacer ({undoTimer}s)
             </button>
