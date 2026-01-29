@@ -7,7 +7,6 @@ import { ConfirmModal } from "./ConfirmModal";
 import { InventoryCard } from "./InventoryCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToastContext } from "./ui/ToastProvider";
-import PullToRefresh from "react-pull-to-refresh";
 
 const categories = [
   { value: "all", label: "Todos" },
@@ -88,11 +87,6 @@ export function Inventory() {
     
     return data;
   }, [products, categoryFilter, globalFilter]);
-
-  const handleRefresh = async () => {
-    // Force re-fetch by invalidating the query
-    window.location.reload();
-  };
 
   const handleSell = async () => {
     if (confirmSell) {
@@ -260,39 +254,37 @@ export function Inventory() {
         </motion.div>
       )}
 
-      {/* Mobile Cards with Pull-to-Refresh */}
+      {/* Mobile Cards */}
       {isMobile ? (
         <motion.div variants={itemVariants}>
-          <PullToRefresh onRefresh={handleRefresh} className="overflow-visible">
-            <div className="space-y-3">
-              <AnimatePresence mode="popLayout">
-                {filteredData.map((product) => (
-                  <InventoryCard
-                    key={product._id}
-                    product={product}
-                    onSell={handleCardSell}
-                    onEdit={handleCardEdit}
-                    onDelete={handleCardDelete}
-                  />
-                ))}
-              </AnimatePresence>
-              
-              {filteredData.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-12"
+          <div className="space-y-3">
+            <AnimatePresence mode="popLayout">
+              {filteredData.map((product) => (
+                <InventoryCard
+                  key={product._id}
+                  product={product}
+                  onSell={handleCardSell}
+                  onEdit={handleCardEdit}
+                  onDelete={handleCardDelete}
+                />
+              ))}
+            </AnimatePresence>
+            
+            {filteredData.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-12"
+              >
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center"
                 >
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center"
-                  >
-                    <Package className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground font-medium">No se encontraron productos</p>
-                  <p className="text-sm text-muted-foreground mt-1">Intenta con otros filtros de búsqueda</p>
-                </motion.div>
-              )}
-            </div>
-          </PullToRefresh>
+                  <Package className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">No se encontraron productos</p>
+                <p className="text-sm text-muted-foreground mt-1">Intenta con otros filtros de búsqueda</p>
+              </motion.div>
+            )}
+          </div>
           
           {/* Mobile Floating Action Button */}
           <motion.button
