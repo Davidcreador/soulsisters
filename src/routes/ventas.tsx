@@ -3,7 +3,17 @@ import { useState, useMemo, useEffect } from "react";
 import { useProducts, useSellProduct } from "../hooks/useInventory";
 import { formatCurrency } from "../lib/utils";
 import { useToastContext } from "../components/ui/ToastProvider";
-import { Search, Grid3X3, List, Package, WifiOff, Check, Plus, Minus, X } from "lucide-react";
+import {
+  Search,
+  Grid3X3,
+  List,
+  Package,
+  WifiOff,
+  Check,
+  Plus,
+  Minus,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
@@ -100,7 +110,7 @@ function Ventas() {
     // Filter by search
     if (searchQuery) {
       filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -213,7 +223,8 @@ function Ventas() {
           >
             <WifiOff className="w-4 h-4" />
             <span className="text-sm font-medium">
-              Modo sin conexión - Las ventas se sincronizarán cuando vuelva la conexión
+              Modo sin conexión - Las ventas se sincronizarán cuando vuelva la
+              conexión
             </span>
           </motion.div>
         )}
@@ -229,7 +240,9 @@ function Ventas() {
                 <Package className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">Punto de Venta</h1>
+                <h1 className="text-xl font-bold text-foreground">
+                  Punto de Venta
+                </h1>
                 <p className="text-sm text-muted-foreground">
                   {filteredProducts.length} productos
                 </p>
@@ -363,7 +376,7 @@ function Ventas() {
                     <div className="flex items-center gap-2">
                       <span
                         className={`text-xs px-2 py-1 rounded-full border ${getStockColor(
-                          product.quantity
+                          product.quantity,
                         )}`}
                       >
                         {getStockLabel(product.quantity)}
@@ -425,7 +438,7 @@ function Ventas() {
                   <div className="flex items-center justify-between">
                     <span
                       className={`text-xs px-2 py-1 rounded-full border ${getStockColor(
-                        product.quantity
+                        product.quantity,
                       )}`}
                     >
                       {getStockLabel(product.quantity)}
@@ -486,7 +499,7 @@ function Ventas() {
                 {/* Stock */}
                 <span
                   className={`text-xs px-2 py-1 rounded-full border ${getStockColor(
-                    product.quantity
+                    product.quantity,
                   )}`}
                 >
                   {getStockLabel(product.quantity)}
@@ -525,9 +538,9 @@ function Ventas() {
               animate={isMobile ? { y: 0 } : { scale: 1, y: 0 }}
               exit={isMobile ? { y: "100%" } : { scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`bg-background border border-border shadow-2xl w-full ${
-                isMobile 
-                  ? "rounded-t-3xl max-h-[90vh] overflow-y-auto" 
+              className={`bg-white border border-border shadow-2xl w-full ${
+                isMobile
+                  ? "rounded-t-3xl max-h-[90vh] overflow-y-auto"
                   : "rounded-2xl max-w-md"
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -537,7 +550,9 @@ function Ventas() {
                 <div className="sticky top-0 bg-background pt-3 pb-2 px-6 z-10">
                   <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4" />
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-foreground">Confirmar Venta</h2>
+                    <h2 className="text-xl font-bold text-foreground">
+                      Confirmar Venta
+                    </h2>
                     <button
                       onClick={() => setIsSellModalOpen(false)}
                       className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -598,9 +613,13 @@ function Ventas() {
                     </span>
                     <button
                       onClick={() =>
-                        setQuantity(Math.min(5, selectedProduct.quantity, quantity + 1))
+                        setQuantity(
+                          Math.min(5, selectedProduct.quantity, quantity + 1),
+                        )
                       }
-                      disabled={quantity >= selectedProduct.quantity || quantity >= 5}
+                      disabled={
+                        quantity >= selectedProduct.quantity || quantity >= 5
+                      }
                       className="w-14 h-14 rounded-2xl bg-muted text-foreground flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
                     >
                       <Plus className="w-6 h-6" />
@@ -613,7 +632,9 @@ function Ventas() {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-lg">Total</span>
                     <span className="text-3xl font-bold text-foreground">
-                      {formatCurrency(selectedProduct.suggestedPrice * quantity)}
+                      {formatCurrency(
+                        selectedProduct.suggestedPrice * quantity,
+                      )}
                     </span>
                   </div>
                 </div>
@@ -649,7 +670,9 @@ function Ventas() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             className={`fixed ${
-              isMobile ? "bottom-4 left-4 right-4" : "bottom-6 left-1/2 transform -translate-x-1/2"
+              isMobile
+                ? "bottom-4 left-4 right-4"
+                : "bottom-6 left-1/2 transform -translate-x-1/2"
             } bg-foreground text-background px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center justify-between gap-4`}
           >
             <div className="flex items-center gap-3">
@@ -658,7 +681,9 @@ function Ventas() {
               </div>
               <div>
                 <p className="font-semibold">Venta completada</p>
-                <p className="text-sm text-background/70">{undoSale.quantity}x {undoSale.productName}</p>
+                <p className="text-sm text-background/70">
+                  {undoSale.quantity}x {undoSale.productName}
+                </p>
               </div>
             </div>
             <button
