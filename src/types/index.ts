@@ -1,3 +1,5 @@
+import type { Id } from "../../convex/_generated/dataModel";
+
 export interface Product {
   _id: string;
   _creationTime: number;
@@ -10,7 +12,7 @@ export interface Product {
   status: 'available' | 'sold' | 'low-stock';
   notes?: string;
   dateAdded: string;
-  image?: string;
+  image?: Id<"_storage">;
 }
 
 export type Category = 

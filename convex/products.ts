@@ -115,7 +115,7 @@ export const add = mutation({
       v.literal("low-stock")
     ),
     notes: v.optional(v.string()),
-    image: v.optional(v.string()),
+    image: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const product = await ctx.db.insert("products", {
@@ -123,6 +123,22 @@ export const add = mutation({
       dateAdded: new Date().toISOString().split("T")[0],
     });
     return product;
+  },
+});
+
+// Generate upload URL for file storage
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+// Get image URL from storage ID
+export const getImageUrl = query({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
   },
 });
 
@@ -150,7 +166,7 @@ export const seedBatch = mutation({
           v.literal("low-stock")
         ),
         notes: v.optional(v.string()),
-        image: v.optional(v.string()),
+        image: v.optional(v.id("_storage")),
         dateAdded: v.string(),
       })
     ),
@@ -196,7 +212,7 @@ export const update = mutation({
       )
     ),
     notes: v.optional(v.string()),
-    image: v.optional(v.string()),
+    image: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;

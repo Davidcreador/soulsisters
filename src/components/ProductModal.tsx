@@ -1,9 +1,10 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { useAddProduct, useUpdateProduct } from "../hooks/useInventory";
-import { X, Upload, Image as ImageIcon } from "lucide-react";
+import { useAddProduct, useUpdateProduct, useGenerateUploadUrl, useImageUrl } from "../hooks/useInventory";
+import { X, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
 import { calculateProfitPercentage } from "../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToastContext } from "./ui/ToastProvider";
+import type { Id } from "../../convex/_generated/dataModel";
 
 const categories = [
   { value: "necklaces", label: "Collares" },
@@ -24,7 +25,7 @@ interface Product {
   category: string;
   status: string;
   notes?: string;
-  image?: string;
+  image?: Id<"_storage">;
 }
 
 interface ProductModalProps {
@@ -36,6 +37,7 @@ interface ProductModalProps {
 export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const addProduct = useAddProduct();
   const updateProduct = useUpdateProduct();
+  const generateUploadUrl = useGenerateUploadUrl();
   const { addToast } = useToastContext();
 
   const [formData, setFormData] = useState<{
@@ -47,7 +49,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     category: "necklaces" | "earrings" | "bracelets" | "rings" | "sets" | "other";
     status: "available" | "sold" | "low-stock";
     notes: string;
-    image: string;
+    image: Id<"_storage"> | undefined;
   }>({
     name: "",
     quantity: 0,
@@ -57,9 +59,13 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     category: "necklaces",
     status: "available",
     notes: "",
-    image: "",
+    image: undefined,
   });
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Get image URL if editing a product with an image
+  const existingImageUrl = useImageUrl(product?.image);
 
   useEffect(() => {
     if (product) {
@@ -72,9 +78,9 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         category: product.category as "necklaces" | "earrings" | "bracelets" | "rings" | "sets" | "other",
         status: product.status as "available" | "sold" | "low-stock",
         notes: product.notes || "",
-        image: product.image || "",
+        image: product.image,
       });
-      setImagePreview(product.image || null);
+      setSelectedFile(null);
     } else {
       setFormData({
         name: "",
@@ -85,9 +91,9 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         category: "necklaces",
         status: "available",
         notes: "",
-        image: "",
+        image: undefined,
       });
-      setImagePreview(null);
+      setSelectedFile(null);
     }
   }, [product, isOpen]);
 
@@ -99,19 +105,46 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-        setFormData((prev) => ({ ...prev, image: result }));
-      };
-      reader.readAsDataURL(file);
+      setSelectedFile(file);
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<Id<"_storage"> | undefined> => {
+    try {
+      // Step 1: Get upload URL
+      const postUrl = await generateUploadUrl();
+      
+      // Step 2: Upload file
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      
+      if (!result.ok) {
+        throw new Error("Failed to upload image");
+      }
+      
+      const { storageId } = await result.json();
+      return storageId as Id<"_storage">;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
     }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setIsUploading(true);
+    
     try {
+      let imageId = formData.image;
+      
+      // Upload new image if selected
+      if (selectedFile) {
+        imageId = await uploadImage(selectedFile);
+      }
+      
       // Build update object with only defined values
       const updateData: any = {
         name: formData.name,
@@ -127,8 +160,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
       if (formData.notes && formData.notes.trim() !== "") {
         updateData.notes = formData.notes;
       }
-      if (formData.image && formData.image.trim() !== "") {
-        updateData.image = formData.image;
+      if (imageId) {
+        updateData.image = imageId;
       }
       
       if (product) {
@@ -157,8 +190,23 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         description: "No se pudo guardar el producto",
         type: "error",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
+
+  // Get preview URL for selected file
+  const getPreviewUrl = () => {
+    if (selectedFile) {
+      return URL.createObjectURL(selectedFile);
+    }
+    if (existingImageUrl) {
+      return existingImageUrl;
+    }
+    return null;
+  };
+
+  const previewUrl = getPreviewUrl();
 
   if (!isOpen) return null;
 
@@ -192,9 +240,9 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 <label className="block text-sm font-medium text-foreground">Imagen del Producto</label>
                 <div className="flex items-center gap-4">
                   <div className="w-24 h-24 rounded-xl border-2 border-dashed border-border bg-muted flex items-center justify-center overflow-hidden">
-                    {imagePreview ? (
+                    {previewUrl ? (
                       <img 
-                        src={imagePreview} 
+                        src={previewUrl} 
                         alt="Preview" 
                         className="w-full h-full object-cover"
                       />
@@ -202,17 +250,29 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                       <ImageIcon className="w-8 h-8 text-muted-foreground" />
                     )}
                   </div>
-                  <label className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4" />
-                    <span className="text-sm">Subir imagen</span>
+                  <label className={`flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    {isUploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    <span className="text-sm">
+                      {isUploading ? "Subiendo..." : "Subir imagen"}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
+                      disabled={isUploading}
                       className="hidden"
                     />
                   </label>
                 </div>
+                {selectedFile && (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedFile.name} - La imagen se subirá al guardar
+                  </p>
+                )}
               </div>
 
               {/* Name */}
@@ -314,15 +374,24 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 <button
                   type="button"
                   onClick={onClose}
+                  disabled={isUploading}
                   className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
+                  disabled={isUploading}
                   className="btn btn-primary"
                 >
-                  {product ? "Guardar Cambios" : "Agregar Producto"}
+                  {isUploading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Guardando...
+                    </span>
+                  ) : (
+                    product ? "Guardar Cambios" : "Agregar Producto"
+                  )}
                 </button>
               </div>
             </form>

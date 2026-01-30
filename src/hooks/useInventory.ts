@@ -51,3 +51,16 @@ export const useDeleteProduct = () => {
 export const useSellProduct = () => {
   return useMutation(api.products.sell);
 };
+
+// Mutación para generar URL de upload
+export const useGenerateUploadUrl = () => {
+  return useMutation(api.products.generateUploadUrl);
+};
+
+// Hook para obtener URL de imagen desde storage ID
+export const useImageUrl = (storageId: string | undefined) => {
+  return useQuery(
+    api.products.getImageUrl,
+    storageId ? { storageId: storageId as any } : "skip"
+  );
+};

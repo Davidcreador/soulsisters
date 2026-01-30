@@ -1,12 +1,59 @@
 import { useState, useMemo, useEffect } from "react";
-import { useProducts, useDeleteProduct, useSellProduct } from "../hooks/useInventory";
-import { Search, Plus, Filter, Edit2, Trash2, ShoppingCart, AlertCircle, Image as ImageIcon, Package } from "lucide-react";
+import { useProducts, useDeleteProduct, useSellProduct, useImageUrl } from "../hooks/useInventory";
+import { Search, Plus, Filter, Edit2, Trash2, ShoppingCart, AlertCircle, Image as ImageIcon, Package, Loader2 } from "lucide-react";
 import { formatCurrency, getCategoryLabel, getStatusLabel, getStatusColor } from "../lib/utils";
 import { ProductModal } from "./ProductModal";
 import { ConfirmModal } from "./ConfirmModal";
 import { InventoryCard } from "./InventoryCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToastContext } from "./ui/ToastProvider";
+
+// Helper component for displaying product images (handles both base64 and storage IDs)
+function ProductTableImage({ image, alt }: { image: string | undefined; alt: string }) {
+  const [error, setError] = useState(false);
+  
+  // Check if it's a base64 image (old format) or external URL
+  const isBase64 = image?.startsWith('data:image') || image?.startsWith('http');
+  
+  // If it's a base64 image or external URL, use it directly
+  if (isBase64) {
+    if (error) {
+      return <ImageIcon className="w-5 h-5 text-muted-foreground" />;
+    }
+    return (
+      <img 
+        src={image} 
+        alt={alt} 
+        className="w-full h-full object-cover rounded-lg"
+        onError={() => setError(true)}
+      />
+    );
+  }
+  
+  // Otherwise, it's a storage ID, fetch the URL
+  const imageUrl = useImageUrl(image);
+  
+  if (!image) {
+    return <ImageIcon className="w-5 h-5 text-muted-foreground" />;
+  }
+  
+  if (imageUrl === undefined) {
+    return <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />;
+  }
+  
+  if (imageUrl === null || error) {
+    return <ImageIcon className="w-5 h-5 text-muted-foreground" />;
+  }
+  
+  return (
+    <img 
+      src={imageUrl} 
+      alt={alt} 
+      className="w-full h-full object-cover rounded-lg"
+      onError={() => setError(true)}
+    />
+  );
+}
 
 const categories = [
   { value: "all", label: "Todos" },
@@ -325,11 +372,7 @@ export function Inventory() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          {product.image ? (
-                            <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                          )}
+                          <ProductTableImage image={product.image} alt={product.name} />
                         </div>
                         <div>
                           <p className="font-medium text-foreground">{product.name}</p>

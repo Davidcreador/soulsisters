@@ -6,10 +6,12 @@ import {
   Trash2, 
   MoreVertical,
   Package,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { formatCurrency, getCategoryLabel, getStatusLabel, getStatusColor } from "../lib/utils";
 import type { Product } from "../types";
+import { useImageUrl } from "../hooks/useInventory";
 
 interface InventoryCardProps {
   product: Product;
@@ -26,6 +28,70 @@ const categoryColors: Record<string, string> = {
   sets: "bg-emerald-100 text-emerald-800 border-emerald-200",
   other: "bg-yellow-100 text-yellow-800 border-yellow-200",
 };
+
+function ProductImage({ storageId, alt }: { storageId: string | undefined; alt: string }) {
+  const [error, setError] = useState(false);
+  
+  console.log('ProductImage - storageId:', storageId?.substring(0, 50));
+  
+  // Check if it's a base64 image (old format)
+  const isBase64 = storageId?.startsWith('data:image') || storageId?.startsWith('http');
+  
+  console.log('ProductImage - isBase64:', isBase64);
+  
+  // If it's a base64 image or external URL, use it directly
+  if (isBase64) {
+    if (error) {
+      console.log('ProductImage - base64 error, showing Package icon');
+      return <Package className="w-6 h-6 text-muted-foreground" />;
+    }
+    console.log('ProductImage - rendering base64 image');
+    return (
+      <img
+        src={storageId}
+        alt={alt}
+        className="w-full h-full object-cover"
+        onError={() => {
+          console.log('ProductImage - base64 image failed to load');
+          setError(true);
+        }}
+      />
+    );
+  }
+  
+  // Otherwise, it's a storage ID, fetch the URL
+  const imageUrl = useImageUrl(storageId);
+  
+  console.log('ProductImage - imageUrl:', imageUrl);
+  
+  if (!storageId) {
+    console.log('ProductImage - no storageId, showing Package icon');
+    return <Package className="w-6 h-6 text-muted-foreground" />;
+  }
+  
+  if (imageUrl === undefined) {
+    console.log('ProductImage - loading, showing spinner');
+    return <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />;
+  }
+  
+  if (imageUrl === null || error) {
+    console.log('ProductImage - no URL or error, showing Package icon');
+    return <Package className="w-6 h-6 text-muted-foreground" />;
+  }
+  
+  console.log('ProductImage - rendering image from URL:', imageUrl.substring(0, 50));
+  return (
+    <img
+      src={imageUrl}
+      alt={alt}
+      className="w-full h-full object-cover"
+      onError={() => {
+        console.log('ProductImage - image failed to load from URL');
+        setError(true);
+      }}
+    />
+  );
+}
 
 export function InventoryCard({ product, onSell, onEdit, onDelete }: InventoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -46,15 +112,7 @@ export function InventoryCard({ product, onSell, onEdit, onDelete }: InventoryCa
         <div className="flex items-start gap-3">
           {/* Product Image */}
           <div className="w-[60px] h-[60px] rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {product.image ? (
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Package className="w-6 h-6 text-muted-foreground" />
-            )}
+            <ProductImage storageId={product.image} alt={product.name} />
           </div>
 
           {/* Product Info */}
