@@ -32,7 +32,6 @@ export function POSHeader() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
               <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">{user?.name}</span>
               <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
                 {user?.role === "admin" ? "Admin" : "Vendedor"}
               </span>
