@@ -525,7 +525,7 @@ function Ventas() {
               animate={isMobile ? { y: 0 } : { scale: 1, y: 0 }}
               exit={isMobile ? { y: "100%" } : { scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`bg-card w-full ${
+              className={`bg-background border border-border shadow-2xl w-full ${
                 isMobile 
                   ? "rounded-t-3xl max-h-[90vh] overflow-y-auto" 
                   : "rounded-2xl max-w-md"
@@ -534,7 +534,7 @@ function Ventas() {
             >
               {/* Mobile Handle Bar */}
               {isMobile && (
-                <div className="sticky top-0 bg-card pt-3 pb-2 px-6 z-10">
+                <div className="sticky top-0 bg-background pt-3 pb-2 px-6 z-10">
                   <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4" />
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold text-foreground">Confirmar Venta</h2>
