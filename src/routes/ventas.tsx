@@ -548,7 +548,7 @@ function Ventas() {
                 </div>
               )}
 
-              <div className="p-6 pt-2">
+              <div className="p-6 pt-2 bg-background">
                 {!isMobile && (
                   <h2 className="text-xl font-bold text-foreground mb-4">
                     Confirmar Venta
