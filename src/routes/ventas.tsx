@@ -688,7 +688,7 @@ function Ventas() {
             </div>
             <button
               onClick={handleUndo}
-              className="px-4 py-2 bg-background/20 rounded-xl text-sm font-semibold hover:bg-background/30 transition-colors whitespace-nowrap"
+              className="px-4 py-2 bg-white rounded-xl text-sm font-semibold hover:bg-background/30 transition-colors whitespace-nowrap"
             >
               Deshacer ({undoTimer}s)
             </button>
